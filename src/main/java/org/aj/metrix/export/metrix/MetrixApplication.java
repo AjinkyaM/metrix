@@ -6,7 +6,12 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.client.RestTemplate;
 
+import io.prometheus.client.spring.boot.EnablePrometheusEndpoint;
+import io.prometheus.client.spring.boot.EnableSpringBootMetricsCollector;
+
 @SpringBootApplication
+@EnablePrometheusEndpoint
+@EnableSpringBootMetricsCollector
 public class MetrixApplication {
 	
 	public static void main(String[] args) {

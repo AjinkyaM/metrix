@@ -1,83 +1,61 @@
 package org.aj.metrix.export.metrix;
 
+import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Value;
+import javax.annotation.PostConstruct;
+import org.aj.metrix.export.metrix.ConfigProp.MetrixConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
 import io.prometheus.client.Counter;
-import io.prometheus.client.Gauge;
-import io.prometheus.client.Histogram;
-import io.prometheus.client.Summary;
 
 @Service
 public class MetrixCollectorService {
-
-	@Value("${metrix-url}")
-	private String metrixUrl;
 	
-	private static final Counter appCounter = Counter.build().name("appCounter").labelNames("browserType").help("No. of user by browser type").register();
+	@Autowired
+	private ConfigProp configProp;
 	
-	private static final Gauge appGauge = Gauge.build().name("appGauge").labelNames("counterType").help("appGauge help text").register();
-
-	static final Summary appSummaryValue = Summary.build().name("appSummaryValue").labelNames("summaryType").help("summaryType value help text").register();
-	static final Summary appSummaryLatency = Summary.build().name("appSummaryLatency").labelNames("summaryType").help("summaryType Latency help text").register();
+	private Map<String, Counter> counterMap = new HashMap<>();
 	
-	static final Histogram appHistogram = Histogram.build().name("appHistogram").labelNames("appHistogramType").help("appHistogram help text").register();
-
+	@PostConstruct
+	public void init(){
+		Map<String, MetrixConfig> countermap = configProp.getCountermap();
+		countermap.forEach((k,v)-> this.getCounter(v));
+	 }
+	
 	@Scheduled(cron = "${interval.counter.cron}")
 	public void collect() {
+		Map<String, MetrixConfig> countermap = configProp.getCountermap();
+		countermap.forEach((k,v)-> this.collectValue(v));
+	}
 
+	private void collectValue(MetrixConfig metrixConfig) {
 		RestTemplate restTemplate = new RestTemplate();
-		Map<String, String> metrixMap = restTemplate.getForObject(metrixUrl, Map.class);
+		Map<String, String> metrixMap = restTemplate.getForObject(metrixConfig.getUrl(), Map.class);
 		
 		if (null != metrixMap && metrixMap.size() > 0 ) {
 			
-			metrixMap.forEach((k, v) -> processMetrixData(k, v));
-		}
-
-	}	
-
-	private void processMetrixData(String lable, String value) {
-		if(lable.contains("-")) {
-			String[] lableMetrixArray = lable.split("-");
-			
-			switch (lableMetrixArray[1]) {
-
-			case "counter": buildCounter(lableMetrixArray[0],value);
-							break;
-
-			case "gauge": buildGauge(lableMetrixArray[0],value);
-						  break;
-
-			case "summary": buildSummary(lableMetrixArray[0],value);
-							break;
-
-			case "histogram": buildHistogram(lableMetrixArray[0],value);
-							  break;
-			}
-			
-		}else {
-			buildCounter(lable, value);
+			metrixMap.forEach((lable, value) -> buildCounter(metrixConfig.getName(),lable, value));
 		}
 	}
 
-	private void buildHistogram(String lable, String value) {
-		appHistogram.labels(lable).observe(Double.parseDouble(value));		
+	private void buildCounter(String counterName, String lable, String value) {
+		counterMap.get(counterName).labels(lable).inc(Double.parseDouble(value));
+	}
+	
+	private void getCounter(MetrixConfig metrixConfig) {
+		Counter appCounter = Counter.build().name(metrixConfig.getName()).labelNames(metrixConfig.getLable()).help(metrixConfig.getHelpText()).register();
+		counterMap.put(metrixConfig.getName(), appCounter);
 	}
 
-	private void buildSummary(String lable, String value) {
-		appSummaryValue.labels(lable).observe(Double.parseDouble(value));		
+	public Map<String, Counter> getCounterMap() {
+		return counterMap;
 	}
 
-	private void buildGauge(String lable, String value) {
-		appGauge.labels(lable).inc(Double.parseDouble(value));		
-	}
-
-	private void buildCounter(String lable, String value) {
-		 appCounter.labels(lable).inc(Double.parseDouble(value));
+	public void setCounterMap(Map<String, Counter> counterMap) {
+		this.counterMap = counterMap;
 	}
 
 }

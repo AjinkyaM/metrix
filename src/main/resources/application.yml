@@ -1,13 +1,15 @@
 #server.port : 8899
 
+management.security.enabled : false
+
 endpoints:
   prometheus:
     path: "mymetrics"
 
-management:
-  port: 8081
-  security:
-    enabled: false
+#management:
+#  port: 8081
+#  security:
+#    enabled: false
     
 interval.counter.cron : "*/59 * * * * *"
 

@@ -25,17 +25,17 @@ metrix :
                     name : temperature 
                     lable : mumbaiTemperature
                     helpText : Temperature in mumbai
-                    url : http://localhost:8080/temp
+                    url : https://simple-hash.herokuapp.com/temp
 
                 humidity :
                     name : humidity 
                     lable : mumbaiHumidity
                     helpText : Humidity in mumbai
-                    url : http://localhost:8080/humidity
+                    url : https://simple-hash.herokuapp.com/humidity
                     
                 wind :
                     name : wind 
                     lable : mumbaiWind
                     helpText : wind in mumbai
-                    url : http://localhost:8080/wind                                        
+                    url : https://simple-hash.herokuapp.com/wind                                        
     

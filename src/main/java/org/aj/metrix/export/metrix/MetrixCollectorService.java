@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import io.prometheus.client.Counter;
+import io.prometheus.client.Gauge;
 
 @Service
 public class MetrixCollectorService {
@@ -18,44 +19,59 @@ public class MetrixCollectorService {
 	private ConfigProp configProp;
 	
 	private Map<String, Counter> counterMap = new HashMap<>();
+	private Map<String, Gauge> gaugeMap = new HashMap<>();
 	
 	@PostConstruct
 	public void init(){
-		Map<String, MetrixConfig> countermap = configProp.getCountermap();
-		countermap.forEach((k,v)-> this.getCounter(v));
+		Map<String, MetrixConfig> counters = configProp.getCounter();
+		counters.forEach((k,v)-> this.getCounter(v));
+		
+		Map<String, MetrixConfig> gauges = configProp.getGauge();
+		gauges.forEach((k,v)-> this.getGauge(v));
 	 }
 	
 	@Scheduled(cron = "${interval.counter.cron}")
 	public void collect() {
-		Map<String, MetrixConfig> countermap = configProp.getCountermap();
-		countermap.forEach((k,v)-> this.collectValue(v));
+		Map<String, MetrixConfig> counters = configProp.getCounter();
+		counters.forEach((k,v)-> this.getCounterValue(v));
+		
+		Map<String, MetrixConfig> gauges = configProp.getGauge();
+		gauges.forEach((k,v)-> this.getGaugeValue(v));
 	}
 
-	private void collectValue(MetrixConfig metrixConfig) {
-		RestTemplate restTemplate = new RestTemplate();
-		Map<String, String> metrixMap = restTemplate.getForObject(metrixConfig.getUrl(), Map.class);
+	private void getCounterValue(MetrixConfig metrixConfig) {
+		Map<String, String> metrixMap = getMetrixMap(metrixConfig);
 		
 		if (null != metrixMap && metrixMap.size() > 0 ) {
 			
-			metrixMap.forEach((lable, value) -> buildCounter(metrixConfig.getName(),lable, value));
+			metrixMap.forEach((lable, value) -> counterMap.get(metrixConfig.getName()).labels(lable).inc(Double.parseDouble(value)) );
+		}
+	}
+	
+	private void getGaugeValue(MetrixConfig metrixConfig) {
+		Map<String, String> metrixMap = getMetrixMap(metrixConfig);
+		
+		if (null != metrixMap && metrixMap.size() > 0 ) {
+			
+			metrixMap.forEach((lable, value) -> gaugeMap.get(metrixConfig.getName()).labels(lable).set(Double.parseDouble(value)) );
 		}
 	}
 
-	private void buildCounter(String counterName, String lable, String value) {
-		counterMap.get(counterName).labels(lable).inc(Double.parseDouble(value));
+	private Map<String, String> getMetrixMap(MetrixConfig metrixConfig) {
+		RestTemplate restTemplate = new RestTemplate();
+		Map<String, String> metrixMap = restTemplate.getForObject(metrixConfig.getUrl(), Map.class);
+		return metrixMap;
 	}
+	
+	
 	
 	private void getCounter(MetrixConfig metrixConfig) {
 		Counter appCounter = Counter.build().name(metrixConfig.getName()).labelNames(metrixConfig.getLable()).help(metrixConfig.getHelpText()).register();
 		counterMap.put(metrixConfig.getName(), appCounter);
 	}
-
-	public Map<String, Counter> getCounterMap() {
-		return counterMap;
+	
+	private void getGauge(MetrixConfig metrixConfig) {
+		Gauge appGauge = Gauge.build().name(metrixConfig.getName()).labelNames(metrixConfig.getLable()).help(metrixConfig.getHelpText()).register();
+		gaugeMap.put(metrixConfig.getName(), appGauge);
 	}
-
-	public void setCounterMap(Map<String, Counter> counterMap) {
-		this.counterMap = counterMap;
-	}
-
 }

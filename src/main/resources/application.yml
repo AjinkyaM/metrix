@@ -5,12 +5,7 @@ management.security.enabled : false
 endpoints:
   prometheus:
     path: "mymetrics"
-
-#management:
-#  port: 8081
-#  security:
-#    enabled: false
-    
+   
 interval.counter.cron : "*/59 * * * * *"
 
 #"0 0 * * * *" = the top of every hour of every day.
@@ -22,22 +17,30 @@ interval.counter.cron : "*/59 * * * * *"
 #"0 0 0 25 12 ?" = every Christmas Day at midnight
 
 metrix : 
-    countermap:
-                temperature :
-                    name : temperature 
-                    lable : mumbaiTemperature
-                    helpText : Temperature in mumbai
-                    url : https://simple-hash.herokuapp.com/temp
-
-                humidity :
-                    name : humidity 
-                    lable : mumbaiHumidity
-                    helpText : Humidity in mumbai
-                    url : https://simple-hash.herokuapp.com/humidity
-                    
-                wind :
-                    name : wind 
-                    lable : mumbaiWind
-                    helpText : wind in mumbai
-                    url : https://simple-hash.herokuapp.com/wind                                        
+    counter:
+                    usercount :
+                        name : usercount 
+                        lable : usercount
+                        helpText : Usercount for my app
+                        url : https://simple-hash.herokuapp.com/usercount
+    gauge :         
+                    temperature :
+                        name : temperature 
+                        lable : mumbaiTemperature
+                        helpText : Temperature in mumbai
+                        url : https://simple-hash.herokuapp.com/temp
+    
+                    humidity :
+                        name : humidity 
+                        lable : mumbaiHumidity
+                        helpText : Humidity in mumbai
+                        url : https://simple-hash.herokuapp.com/humidity
+                        
+                    wind :
+                        name : wind 
+                        lable : mumbaiWind
+                        helpText : wind in mumbai
+                        url : https://simple-hash.herokuapp.com/wind
+#    histogram :
+#    summary :                                       
     

@@ -8,16 +8,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "metrix")
 public class ConfigProp {
-	private Map<String, MetrixConfig> countermap;
+	private Map<String, MetrixConfig> counter;
+	private Map<String, MetrixConfig> gauge;
 	
-	public Map<String, MetrixConfig> getCountermap() {
-		return countermap;
-	}
-
-	public void setCountermap(Map<String, MetrixConfig> countermap) {
-		this.countermap = countermap;
-	}
-
 	public static class MetrixConfig{
 		private String name;
 		private String lable;
@@ -48,6 +41,22 @@ public class ConfigProp {
 		public void setHelpText(String helpText) {
 			this.helpText = helpText;
 		}
+	}
+
+	public Map<String, MetrixConfig> getCounter() {
+		return counter;
+	}
+
+	public void setCounter(Map<String, MetrixConfig> counter) {
+		this.counter = counter;
+	}
+
+	public Map<String, MetrixConfig> getGauge() {
+		return gauge;
+	}
+
+	public void setGauge(Map<String, MetrixConfig> gauge) {
+		this.gauge = gauge;
 	}
 
 }

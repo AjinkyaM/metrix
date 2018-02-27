@@ -11,15 +11,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
+import io.prometheus.client.Summary;
 
 @Service
 public class MetrixCollectorService {
+	
+	private String requestLatencyStr = "_requestLatency";
 	
 	@Autowired
 	private ConfigProp configProp;
 	
 	private Map<String, Counter> counterMap = new HashMap<>();
 	private Map<String, Gauge> gaugeMap = new HashMap<>();
+	private Map<String, Summary> summaryMap = new HashMap<>();
 	
 	@PostConstruct
 	public void init(){
@@ -28,6 +32,9 @@ public class MetrixCollectorService {
 		
 		Map<String, MetrixConfig> gauges = configProp.getGauge();
 		gauges.forEach((k,v)-> this.getGauge(v));
+		
+		Map<String, MetrixConfig> summary = configProp.getSummary();
+		summary.forEach((k,v)-> this.getSummary(v));
 	 }
 	
 	@Scheduled(cron = "${interval.counter.cron}")
@@ -37,6 +44,16 @@ public class MetrixCollectorService {
 		
 		Map<String, MetrixConfig> gauges = configProp.getGauge();
 		gauges.forEach((k,v)-> this.getGaugeValue(v));
+		
+		Map<String, MetrixConfig> summary = configProp.getSummary();
+		summary.forEach((k,v)-> this.getSummaryValue(v));
+	}
+
+	private void getSummaryValue(MetrixConfig metrixConfig) {
+		summaryMap.get(metrixConfig.getName() + requestLatencyStr)
+		          .time(
+				        () -> getMetrixMap(metrixConfig) 
+				      );
 	}
 
 	private void getCounterValue(MetrixConfig metrixConfig) {
@@ -56,6 +73,30 @@ public class MetrixCollectorService {
 			metrixMap.forEach((lable, value) -> gaugeMap.get(metrixConfig.getName()).labels(lable).set(Double.parseDouble(value)) );
 		}
 	}
+	
+	private void getCounter(MetrixConfig metrixConfig) {
+		Counter appCounter = Counter.build().name(metrixConfig.getName())
+				                            .labelNames(metrixConfig.getLable())
+				                            .help(metrixConfig.getHelpText()).register();
+		counterMap.put(metrixConfig.getName(), appCounter);
+	}
+	
+	private void getGauge(MetrixConfig metrixConfig) {
+		Gauge appGauge = Gauge.build().name(metrixConfig.getName())
+				                      .labelNames(metrixConfig.getLable())
+				                      .help(metrixConfig.getHelpText()).register();
+		gaugeMap.put(metrixConfig.getName(), appGauge);
+	}
+	
+	private void getSummary(MetrixConfig metrixConfig) {
+		Summary summary_requestLatency  = Summary.build()
+												 .quantile(0.5, 0.05)
+												 .quantile(0.9, 0.01)
+												 .quantile(0.99, 0.001)
+												 .name(metrixConfig.getName() + requestLatencyStr)
+				                                 .help(metrixConfig.getHelpText() + requestLatencyStr).register();
+		summaryMap.put(metrixConfig.getName() + requestLatencyStr, summary_requestLatency );
+	}
 
 	private Map<String, String> getMetrixMap(MetrixConfig metrixConfig) {
 		RestTemplate restTemplate = new RestTemplate();
@@ -63,15 +104,5 @@ public class MetrixCollectorService {
 		return metrixMap;
 	}
 	
-	
-	
-	private void getCounter(MetrixConfig metrixConfig) {
-		Counter appCounter = Counter.build().name(metrixConfig.getName()).labelNames(metrixConfig.getLable()).help(metrixConfig.getHelpText()).register();
-		counterMap.put(metrixConfig.getName(), appCounter);
-	}
-	
-	private void getGauge(MetrixConfig metrixConfig) {
-		Gauge appGauge = Gauge.build().name(metrixConfig.getName()).labelNames(metrixConfig.getLable()).help(metrixConfig.getHelpText()).register();
-		gaugeMap.put(metrixConfig.getName(), appGauge);
-	}
+
 }

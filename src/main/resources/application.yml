@@ -41,6 +41,12 @@ metrix :
                         lable : mumbaiWind
                         helpText : wind in mumbai
                         url : https://simple-hash.herokuapp.com/wind
+
+    summary :       
+                    summaryTest : 
+                        name : summaryTest
+                        lable : summaryTest
+                        url : http://localhost:8080/wind                        
 #    histogram :
 #    summary :                                       
     

@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class ConfigProp {
 	private Map<String, MetrixConfig> counter;
 	private Map<String, MetrixConfig> gauge;
+	private Map<String, MetrixConfig> summary;
 	
 	public static class MetrixConfig{
 		private String name;
@@ -57,6 +58,14 @@ public class ConfigProp {
 
 	public void setGauge(Map<String, MetrixConfig> gauge) {
 		this.gauge = gauge;
+	}
+
+	public Map<String, MetrixConfig> getSummary() {
+		return summary;
+	}
+
+	public void setSummary(Map<String, MetrixConfig> summary) {
+		this.summary = summary;
 	}
 
 }
